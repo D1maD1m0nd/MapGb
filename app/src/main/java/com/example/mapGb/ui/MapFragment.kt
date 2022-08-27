@@ -1,4 +1,4 @@
-package com.example.mapGb
+package com.example.mapGb.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -13,7 +13,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import com.example.mapGb.R
 import com.example.mapGb.databinding.FragmentMapBinding
+import com.example.mapGb.viewModel.MapViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
@@ -36,6 +39,10 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<ConstraintLayout>
     private var userLocationLayer: UserLocationLayer? = null
     private var mapObjects: MapObjectCollection? = null
+    private val viewModel: MapViewModel by lazy {
+        ViewModelProvider(this@MapFragment)[MapViewModel :: class.java]
+    }
+    private var lastPoint : Point? = null
     private val permissionResult = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { result ->
@@ -69,14 +76,23 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentMapBinding.inflate(inflater, container, false)
-
+        initObserver()
         checkPermission()
         return binding.root
     }
 
+    private fun initObserver() {
+        viewModel.pointVisibleLiveData.observe(viewLifecycleOwner) {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        }
 
+        viewModel.locationLiveData.observe(viewLifecycleOwner) {
+            it
+        }
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewModel.getLocationList()
         initView()
     }
 
@@ -93,8 +109,15 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
         mapview.map.isRotateGesturesEnabled = false
         mapview.map.addTapListener(this@MapFragment)
         mapview.map.addInputListener(this@MapFragment)
+        behaivorContainer.saveButton.setOnClickListener {
+            saveLocationData()
+        }
     }
-
+    private fun saveLocationData() = with(binding.behaivorContainer) {
+        val name = nameEditText.text.toString()
+        val annotation = anotationEditText.text.toString()
+        viewModel.savePointData(name, annotation, lastPoint)
+    }
     private fun onMapReady() {
         val mapKit = MapKitFactory.getInstance()
         userLocationLayer = mapKit.createUserLocationLayer(binding.mapview.mapWindow)
@@ -182,8 +205,9 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
     }
 
     override fun onMapTap(p0: Map, p1: Point) {
-        addPlaceMark(p1)
+        lastPoint = p1
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+
     }
 
     override fun onMapLongTap(p0: Map, p1: Point) {

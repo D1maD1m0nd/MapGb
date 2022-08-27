@@ -4,7 +4,7 @@ import androidx.room.*
 
 @Dao
 interface LocationDao {
-    @Query("SELECT * FROM $NAME_DB")
+    @Query("SELECT * FROM $LOCATION_TABLE_NAME")
     fun getLocationList(): List<LocationPoint>
 
     @Upsert()
