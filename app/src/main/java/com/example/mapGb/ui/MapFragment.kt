@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mapGb.R
 import com.example.mapGb.databinding.FragmentMapBinding
+import com.example.mapGb.model.local_store.LocationPointDto
 import com.example.mapGb.viewModel.MapViewModel
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.yandex.mapkit.Animation
@@ -87,7 +88,12 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
         }
 
         viewModel.locationLiveData.observe(viewLifecycleOwner) {
-            it
+            initLocationMark(it)
+        }
+    }
+    fun initLocationMark(list : List<LocationPointDto>) {
+        list.forEach {
+            addPlaceMark(it.point)
         }
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
