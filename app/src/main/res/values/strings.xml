@@ -2,4 +2,15 @@
     <string name="app_name">Map</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="search">Поиск</string>
+    <string name="Confrim">Подтвердить</string>
+    <string name="Address">Адрес</string>
+    <string name="disable_permission">Разрешение не получено</string>
+    <string name="not_found_error_message">Not found</string>
+    <string name="network_error_message">Network error</string>
+    <string name="remote_error_message">Remote server error</string>
+    <string name="unknown_error_message">Unknown error</string>
+    <string name="name">Название</string>
+    <string name="annotation">Аннотация</string>
+    <string name="save">Сохранить</string>
 </resources>
