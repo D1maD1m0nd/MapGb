@@ -7,7 +7,7 @@ import com.yandex.mapkit.geometry.Point
 
 @Entity(tableName = LOCATION_TABLE_NAME)
 data class LocationPoint(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val id: Int = 0,
     val name: String? = null,
     val annotation: String? = null,
     val lan: Double? = null,

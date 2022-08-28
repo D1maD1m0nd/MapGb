@@ -18,19 +18,22 @@ import kotlinx.coroutines.withContext
 class MapViewModel(application: Application) : AndroidViewModel(application) {
     val locationLiveData = MutableLiveData<List<LocationPointDto>>()
     val pointVisibleLiveData = MutableLiveData<Boolean>()
+    val lastLocationLiveData = MutableLiveData<LocationPointDto>()
+
     private val db  = getDb(application.applicationContext)
 
     private val dao = db.locationDao
 
-    fun savePointData(name : String, annotation : String, point : Point?) {
+    fun savePointData(name : String, annotation : String, point : Point?, id : Int) {
         if(point != null) {
+            val location = LocationPoint(name = name, annotation = annotation, lon =  point.longitude, lan = point.latitude, id = id)
             viewModelScope.launch(Dispatchers.IO) {
                 kotlin.runCatching {
-                    val location = LocationPoint(name = name, annotation = annotation, lon =  point.longitude, lan = point.latitude)
                     dao.add(location)
                 }.onSuccess {
                     withContext(Dispatchers.Main) {
                         pointVisibleLiveData.value = true
+                        lastLocationLiveData.value = location.toDto()
                     }
                 }.onFailure {
                     Log.d("DBERROR", it.message ?: "")

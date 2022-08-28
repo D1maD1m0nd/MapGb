@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PointF
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -85,15 +86,20 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
     private fun initObserver() {
         viewModel.pointVisibleLiveData.observe(viewLifecycleOwner) {
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            binding.behaivorContainer.nameEditText.text = null
+            binding.behaivorContainer.anotationEditText.text = null
         }
-
+        viewModel.lastLocationLiveData.observe(viewLifecycleOwner) {
+            addPlaceMark(location = it)
+        }
         viewModel.locationLiveData.observe(viewLifecycleOwner) {
             initLocationMark(it)
         }
+
     }
-    fun initLocationMark(list : List<LocationPointDto>) {
+    private fun initLocationMark(list : List<LocationPointDto>) {
         list.forEach {
-            addPlaceMark(it.point)
+            addPlaceMark(location = it)
         }
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -116,13 +122,17 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
         mapview.map.addTapListener(this@MapFragment)
         mapview.map.addInputListener(this@MapFragment)
         behaivorContainer.saveButton.setOnClickListener {
-            saveLocationData()
+            lastPoint?.let { point ->
+                Log.d("DBERROR", point.hashCode().toString())
+                val id = point.hashCode()
+                saveLocationData(point, id)
+            }
         }
     }
-    private fun saveLocationData() = with(binding.behaivorContainer) {
+    private fun saveLocationData(point : Point, id : Int) = with(binding.behaivorContainer) {
         val name = nameEditText.text.toString()
         val annotation = anotationEditText.text.toString()
-        viewModel.savePointData(name, annotation, lastPoint)
+        viewModel.savePointData(name, annotation, point, id)
     }
     private fun onMapReady() {
         val mapKit = MapKitFactory.getInstance()
@@ -212,8 +222,7 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
 
     override fun onMapTap(p0: Map, p1: Point) {
         lastPoint = p1
-        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-
+        showAddressDialog()
     }
 
     override fun onMapLongTap(p0: Map, p1: Point) {
@@ -221,13 +230,33 @@ class MapFragment : Fragment(),CameraListener, MapObjectTapListener, UserLocatio
     }
 
 
-
-    private fun addPlaceMark(point : Point) {
-        mapObjects?.addPlacemark(point)?.apply {
-            setIcon(
-                    ImageProvider.fromResource(context, R.drawable.search_result)
-                )
-            isDraggable = true
+    private fun showAddressDialog(data : LocationPointDto? = null) = with(binding.behaivorContainer) {
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        binding.behaivorContainer.nameEditText.text = null
+        binding.behaivorContainer.anotationEditText.text = null
+        data?.let { location ->
+            nameEditText.setText(location.name)
+            anotationEditText.setText(location.annotation)
+        }
+    }
+    private fun addPlaceMark(pointArg: Point? = null, location : LocationPointDto? = null) {
+        mapObjects?.let {
+            val point = location?.point ?: pointArg
+            point?.let { p0 ->
+                it.addPlacemark(p0).apply {
+                    setIcon(
+                        ImageProvider.fromResource(context, R.drawable.search_result)
+                    )
+                    isDraggable = true
+                }.addTapListener { mapObject, point ->
+                    Log.d("DBERROR", point.hashCode().toString())
+                    Log.d("DBERROR", "${point.latitude} ${point.longitude}")
+                    Log.d("DBERROR", "${mapObject.userData}")
+                    lastPoint = location?.point ?: point
+                    showAddressDialog(location)
+                    true
+                }
+            }
         }
     }
 
